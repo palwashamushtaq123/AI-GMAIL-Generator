@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>AI Email Generator</title>
+
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+
+<body>
+
+    <div class="container">
+
+        <!-- Header -->
+        <div class="header">
+
+            <div class="icon">
+                ✉
+            </div>
+
+            <h1>AI Email Generator</h1>
+
+            <p>
+                Create professional emails instantly with AI
+            </p>
+
+        </div>
+
+
+        <!-- Input Card -->
+        <div class="card">
+
+            <h2>Generate Your Email</h2>
+
+            <p class="subtitle">
+                Enter the details below and let AI write your email.
+            </p>
+
+
+            <form action="/generate" method="post">
+
+                <!-- Recipient Name -->
+                <div class="form-group">
+
+                    <label for="recipient_name">
+                        Recipient Name
+                    </label>
+
+                    <input
+                        type="text"
+                        id="recipient_name"
+                        name="recipient_name"
+                        placeholder="e.g. Sarah"
+                        value="{{ recipient_name or '' }}"
+                        required
+                    >
+
+                </div>
+
+
+                <!-- Email Purpose -->
+                <div class="form-group">
+
+                    <label for="purpose">
+                        Email Purpose
+                    </label>
+
+                    <textarea
+                        id="purpose"
+                        name="purpose"
+                        placeholder="e.g. Request a meeting to discuss a project"
+                        required
+                    >{{ purpose or '' }}</textarea>
+
+                </div>
+
+
+                <!-- Tone -->
+                <div class="form-group">
+
+                    <label for="tone">
+                        Email Tone
+                    </label>
+
+                    <select
+                        id="tone"
+                        name="tone"
+                        required
+                    >
+
+                        <option value="">
+                            Select a tone
+                        </option>
+
+                        <option value="Professional"
+                            {% if tone == "Professional" %}selected{% endif %}>
+                            Professional
+                        </option>
+
+                        <option value="Friendly"
+                            {% if tone == "Friendly" %}selected{% endif %}>
+                            Friendly
+                        </option>
+
+                        <option value="Formal"
+                            {% if tone == "Formal" %}selected{% endif %}>
+                            Formal
+                        </option>
+
+                    </select>
+
+                </div>
+
+
+                <!-- Generate Button -->
+                <button type="submit">
+                    ✨ Generate Email
+                </button>
+
+            </form>
+
+        </div>
+
+
+        <!-- Generated Result -->
+        {% if email %}
+
+        <div class="result-card">
+
+            <div class="result-title">
+
+                <div class="result-icon">
+                    ✓
+                </div>
+
+                <div>
+
+                    <h2>Generated Email</h2>
+
+                    <p>
+                        Your AI-generated email is ready.
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            <div class="email-box">
+                {{ email }}
+            </div>
+
+        </div>
+
+        {% endif %}
+
+
+    </div>
+
+</body>
+
+</html>
