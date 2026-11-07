@@ -1,103 +1,114 @@
 import os
-
+from pathlib import Path
+from typing import Optional
 from dotenv import load_dotenv
 from google import genai
-
 from fastapi import FastAPI, Request, Form
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 
+# Load environment variables explicitly from current directory
+env_path = Path(__file__).resolve().parent / ".env"
+load_dotenv(dotenv_path=env_path)
 
-# Load environment variables
-load_dotenv()
-
-
-# Gemini API
 API_KEY = os.getenv("GEMINI_API_KEY")
 
-client = genai.Client(api_key=API_KEY)
+if not API_KEY:
+    print("⚠️ WARNING: GEMINI_API_KEY is not set! Check your .env file.")
 
+client = genai.Client(api_key=API_KEY) if API_KEY else None
 
-# FastAPI App
-app = FastAPI(title="AI Email Generator")
-
-
-# Templates
-templates = Jinja2Templates(directory="templates")
-
-
-# Static files
-app.mount(
-    "/static",
-    StaticFiles(directory="static"),
-    name="static"
+app = FastAPI(
+    title="AI Email Generator Pro",
+    description="Professional AI-powered email drafting engine."
 )
 
+templates = Jinja2Templates(directory="templates")
+app.mount("/static", StaticFiles(directory="static"), name="static")
 
-# Home Page
+
 @app.get("/")
-def home(request: Request):
-
+async def home(request: Request):
     return templates.TemplateResponse(
         request=request,
         name="index.html",
         context={
             "email": None,
             "recipient_name": "",
+            "sender_name": "",
             "purpose": "",
-            "tone": ""
+            "tone": "Professional",
+            "email_date": ""
         }
     )
 
 
-# Generate Email
 @app.post("/generate")
-def generate_email(
+async def generate_email(
     request: Request,
     recipient_name: str = Form(...),
+    sender_name: Optional[str] = Form(""),
     purpose: str = Form(...),
-    tone: str = Form(...)
+    tone: str = Form("Professional"),
+    email_date: Optional[str] = Form("")
 ):
+    try:
+        if not client:
+            raise ValueError("GEMINI_API_KEY is missing or invalid. Check your .env file.")
 
-    prompt = f"""
-You are an AI email writing assistant.
+        sender_instruction = f"Sender Name / Signature: {sender_name}" if sender_name else "Do not include a specific sender name unless customary."
+        date_instruction = f"Relevant Date to mention: {email_date}" if email_date else "No specific date required."
 
-Generate a complete email using the following information:
+        prompt = f"""
+You are an expert executive communication assistant.
 
-Recipient Name: {recipient_name}
-Email Purpose: {purpose}
-Tone: {tone}
+Draft a complete, polished email based on these inputs:
+- Recipient Name: {recipient_name}
+- Email Purpose: {purpose}
+- Desired Tone: {tone}
+- {date_instruction}
+- {sender_instruction}
 
-Instructions:
-- Create a suitable subject line.
-- Write a complete email.
-- Use the selected tone.
-- Keep the email clear, natural and professional.
-- Include an appropriate greeting.
-- Include a suitable closing.
-- Do not explain the email.
-- Return only the generated email.
+Guidelines:
+1. Start with an explicit, professional "Subject: [Your Subject Line]" line at the top. DO NOT include your own name or sender name inside the subject line. Keep the subject line concise and strictly about the email's purpose.
+2. Follow with a clean line break and an appropriate greeting.
+3. Write well-structured paragraphs aligned strictly with the specified tone.
+4. Conclude with a natural closing and place the sender name ({sender_name}) strictly at the bottom signature block if provided.
+5. Output ONLY the raw subject line and email body. No extra intros or conversational commentary.
 """
 
+        response = client.models.generate_content(
+            model="gemini-3.8-flash",
+            contents=prompt
+        )
 
-    # Gemini response
-    response = client.models.generate_content(
-        model="gemini-2.5-flash",
-        contents=prompt
-    )
+        generated_email = response.text.strip()
 
+        return templates.TemplateResponse(
+            request=request,
+            name="index.html",
+            context={
+                "email": generated_email,
+                "recipient_name": recipient_name,
+                "sender_name": sender_name,
+                "purpose": purpose,
+                "tone": tone,
+                "email_date": email_date
+            }
+        )
 
-    generated_email = response.text
-
-
-    # Return result to HTML
-    return templates.TemplateResponse(
-        request=request,
-        name="index.html",
-        context={
-            "email": generated_email,
-            "recipient_name": recipient_name,
-            "purpose": purpose,
-            "tone": tone
-        }
-    )
+    except Exception as e:
+        print("GEMINI GENERATION ERROR:", str(e))
+        return templates.TemplateResponse(
+            request=request,
+            name="index.html",
+            context={
+                "error": f"Failed to generate email: {str(e)}",
+                "email": None,
+                "recipient_name": recipient_name,
+                "sender_name": sender_name,
+                "purpose": purpose,
+                "tone": tone,
+                "email_date": email_date
+            }
+        )

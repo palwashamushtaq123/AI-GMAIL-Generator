@@ -4,162 +4,202 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Email Generator Pro</title>
 
-    <title>AI Email Generator</title>
-
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/static/style.css">
+
+    <!-- html2pdf Library for PDF Export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 </head>
 
 <body>
 
-    <div class="container">
+    <header class="app-header">
+        <div class="brand">
+            <div class="brand-logo">✉️</div>
+            <div>
+                <h1 class="brand-title">AI Email Suite</h1>
+                <p class="brand-subtitle">Designed & Developed by <strong>Palwasha Sheikh</strong></p>
+            </div>
+        </div>
+    </header>
 
-        <!-- Header -->
-        <div class="header">
-
-            <div class="icon">
-                ✉
+    <main class="app-layout">
+        
+        <!-- Input Form Section -->
+        <section class="card form-card">
+            <div class="card-header">
+                <h2>Email Configuration</h2>
+                <p>Provide details to craft your tailored email response instantly.</p>
             </div>
 
-            <h1>AI Email Generator</h1>
+            <form action="/generate" method="post" id="email-form">
+                
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="recipient_name">Recipient Name *</label>
+                        <input 
+                            type="text" 
+                            id="recipient_name" 
+                            name="recipient_name" 
+                            placeholder="e.g. Alex Johnson"
+                            value="{{ recipient_name or '' }}" 
+                            required
+                        >
+                    </div>
 
-            <p>
-                Create professional emails instantly with AI
-            </p>
-
-        </div>
-
-
-        <!-- Input Card -->
-        <div class="card">
-
-            <h2>Generate Your Email</h2>
-
-            <p class="subtitle">
-                Enter the details below and let AI write your email.
-            </p>
-
-
-            <form action="/generate" method="post">
-
-                <!-- Recipient Name -->
-                <div class="form-group">
-
-                    <label for="recipient_name">
-                        Recipient Name
-                    </label>
-
-                    <input
-                        type="text"
-                        id="recipient_name"
-                        name="recipient_name"
-                        placeholder="e.g. Sarah"
-                        value="{{ recipient_name or '' }}"
-                        required
-                    >
-
+                    <div class="form-group">
+                        <label for="sender_name">Your Name (Optional)</label>
+                        <input 
+                            type="text" 
+                            id="sender_name" 
+                            name="sender_name" 
+                            placeholder="e.g. Palwasha Sheikh"
+                            value="{{ sender_name or '' }}"
+                        >
+                    </div>
                 </div>
 
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="tone">Communication Tone *</label>
+                        <select id="tone" name="tone" required>
+                            <option value="Professional" {% if tone == "Professional" %}selected{% endif %}>Professional & Direct</option>
+                            <option value="Friendly" {% if tone == "Friendly" %}selected{% endif %}>Warm & Friendly</option>
+                            <option value="Formal" {% if tone == "Formal" %}selected{% endif %}>Executive Formal</option>
+                            <option value="Persuasive" {% if tone == "Persuasive" %}selected{% endif %}>Persuasive & Sales</option>
+                            <option value="Urgent" {% if tone == "Urgent" %}selected{% endif %}>Urgent & Time-Sensitive</option>
+                            <option value="Apologetic" {% if tone == "Apologetic" %}selected{% endif %}>Apologetic & Empathetic</option>
+                        </select>
+                    </div>
 
-                <!-- Email Purpose -->
+                    <div class="form-group">
+                        <label for="email_date">Key Date (Optional)</label>
+                        <input 
+                            type="date" 
+                            id="email_date" 
+                            name="email_date"
+                            value="{{ email_date or '' }}"
+                        >
+                    </div>
+                </div>
+
                 <div class="form-group">
-
-                    <label for="purpose">
-                        Email Purpose
-                    </label>
-
-                    <textarea
-                        id="purpose"
-                        name="purpose"
-                        placeholder="e.g. Request a meeting to discuss a project"
+                    <label for="purpose">Core Purpose / Context *</label>
+                    <textarea 
+                        id="purpose" 
+                        name="purpose" 
+                        placeholder="Briefly state what this email needs to accomplish..."
                         required
                     >{{ purpose or '' }}</textarea>
-
                 </div>
 
-
-                <!-- Tone -->
-                <div class="form-group">
-
-                    <label for="tone">
-                        Email Tone
-                    </label>
-
-                    <select
-                        id="tone"
-                        name="tone"
-                        required
-                    >
-
-                        <option value="">
-                            Select a tone
-                        </option>
-
-                        <option value="Professional"
-                            {% if tone == "Professional" %}selected{% endif %}>
-                            Professional
-                        </option>
-
-                        <option value="Friendly"
-                            {% if tone == "Friendly" %}selected{% endif %}>
-                            Friendly
-                        </option>
-
-                        <option value="Formal"
-                            {% if tone == "Formal" %}selected{% endif %}>
-                            Formal
-                        </option>
-
-                    </select>
-
-                </div>
-
-
-                <!-- Generate Button -->
-                <button type="submit">
-                    ✨ Generate Email
+                <!-- Submit Button with Loading State -->
+                <button type="submit" class="submit-btn" id="submit-btn">
+                    <span id="btn-text">✨ Generate Draft</span>
                 </button>
 
             </form>
+        </section>
 
-        </div>
-
-
-        <!-- Generated Result -->
-        {% if email %}
-
-        <div class="result-card">
-
-            <div class="result-title">
-
-                <div class="result-icon">
-                    ✓
-                </div>
-
+        <!-- Result Display Section -->
+        <section class="card result-card">
+            <div class="card-header flex-between">
                 <div>
-
-                    <h2>Generated Email</h2>
-
-                    <p>
-                        Your AI-generated email is ready.
-                    </p>
-
+                    <h2>Generated Draft</h2>
+                    <p>Review, edit, copy, or export your ready-to-send email.</p>
                 </div>
-
+                {% if email %}
+                <div class="action-buttons">
+                    <button class="copy-btn" onclick="copyToClipboard()" id="copy-btn">
+                        📋 Copy Text
+                    </button>
+                    <button class="copy-btn pdf-btn" onclick="downloadPDF()">
+                        📥 Download PDF
+                    </button>
+                </div>
+                {% endif %}
             </div>
 
-
-            <div class="email-box">
-                {{ email }}
+            {% if error %}
+            <div class="error-box">
+                <p>⚠️ {{ error }}</p>
             </div>
+            {% endif %}
 
-        </div>
+            {% if email %}
+            <div class="email-preview-wrapper">
+                <textarea class="email-output" id="email-output" readonly>{{ email }}</textarea>
+            </div>
+            {% else %}
+            <div class="placeholder-state">
+                <div class="placeholder-icon">📄</div>
+                <p>Fill out the parameters on the left and click <strong>Generate Draft</strong> to compose your email.</p>
+            </div>
+            {% endif %}
+        </section>
 
-        {% endif %}
+    </main>
 
+    <footer class="app-footer">
+        <p>© 2026 AI Email Generator. Built by <strong>Palwasha Sheikh</strong>.</p>
+    </footer>
 
-    </div>
+    <script>
+        // Show loading state immediately when form is submitted
+        document.getElementById('email-form').addEventListener('submit', function() {
+            const btn = document.getElementById('submit-btn');
+            btn.disabled = true;
+            btn.style.opacity = '0.7';
+            btn.innerHTML = '⏳ AI is crafting your email...';
+        });
 
+        function copyToClipboard() {
+            const emailBox = document.getElementById('email-output');
+            if (!emailBox) return;
+
+            navigator.clipboard.writeText(emailBox.value).then(() => {
+                const btn = document.getElementById('copy-btn');
+                const originalText = btn.innerHTML;
+                btn.innerHTML = '✅ Copied!';
+                btn.classList.add('copied');
+
+                setTimeout(() => {
+                    btn.innerHTML = originalText;
+                    btn.classList.remove('copied');
+                }, 2000);
+            }).catch(err => {
+                alert('Failed to copy email text.');
+            });
+        }
+
+        function downloadPDF() {
+            const emailContent = document.getElementById('email-output').value;
+            
+            const element = document.createElement('div');
+            element.style.padding = '30px';
+            element.style.fontFamily = 'Arial, sans-serif';
+            element.style.fontSize = '14px';
+            element.style.lineHeight = '1.6';
+            element.style.color = '#1e293b';
+            element.style.whiteSpace = 'pre-wrap';
+            element.innerText = emailContent;
+
+            const opt = {
+                margin:       15,
+                filename:     'AI_Generated_Email.pdf',
+                image:        { type: 'jpeg', quality: 0.98 },
+                html2canvas:  { scale: 2 },
+                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            };
+
+            html2pdf().set(opt).from(element).save();
+        }
+    </script>
 </body>
 
 </html>
