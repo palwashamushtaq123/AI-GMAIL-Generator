@@ -44,16 +44,16 @@ Once configured, the AI instantly composes a polished email draft with options t
 ```text
 AI EMAIL/
 │
-├── __pycache__/
 ├── output/                  # Stores application screenshots & exports
 │   ├── homepage.png
-│   └── generated-email.png
+│   ├── generated-email-1.png
+│   └── generated-email-2.png
 ├── static/                  # Static assets
 │   └── style.css            # Custom modern stylesheet
 ├── templates/               # HTML templates
 │   └── index.html           # Main dashboard UI
 ├── venv/                    # Python virtual environment
-├── .env                     # Environment variables (API Key)
+├── .env.example             # Environment variables (API Key)
 ├── .gitignore
 ├── main.py                  # FastAPI application backend
 └── requirements.txt         # Project dependencies
